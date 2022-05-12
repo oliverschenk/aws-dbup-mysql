@@ -1,0 +1,73 @@
+service: aws-dbup-mysql
+
+frameworkVersion: '3'
+
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  
+  release:
+    dev: "Debug"
+    test: "Release"
+    prod: "Release"
+
+provider:
+  name: aws
+  stage: dev
+
+  runtime: dotnet6
+  memorySize: 256
+  timeout: 30
+  
+  environment:
+    DB_SECRET_NAME: "/${self:custom.stage}/${env:NAME}/database/secret"
+    DB_NAME: "MyDatabase"
+    AWS_RETRY_MODE: "Standard"
+    AWS_MAX_ATTEMPTS: "5"
+    TIMEOUT: 2000
+
+  vpc:
+    securityGroupIds:
+      - Ref: LambdaSecurityGroup
+    subnetIds:
+      Fn::Split: [ "," , "${ssm:/${self:custom.stage}/${env:NAME}/vpc/subnet/database/ids}" ]
+
+  iam:
+    role:
+      statements:
+        - Effect: 'Allow'
+          Action:
+            - 'secretsmanager:GetSecretValue'
+            - 'secretsmanager:DescribeSecret'
+          Resource: ${ssm:/${self:custom.stage}/${env:NAME}/database/secret}       
+
+  tracing:
+    lambda: true
+  
+package:
+  artifact: bin/${self:custom.release.${self:custom.stage}, 'Release'}/net6.0/aws-dbup-mysql.zip
+
+functions:
+  dbUp:
+    name: ${self:custom.stage}-${env:NAME}-aws-dbup-mysql
+    handler: AwsDbUpMySql::AwsDbUpMySql.Handler::FunctionHandler
+
+resources:
+  Resources:
+    LambdaSecurityGroup:
+      Type: "AWS::EC2::SecurityGroup"
+      Properties:
+        GroupName: "migration-lambda-sg"
+        GroupDescription: Allow all outbound traffic, no inbound
+        SecurityGroupEgress:
+          - IpProtocol: -1
+            CidrIp: 0.0.0.0/0
+        VpcId: ${ssm:/${self:custom.stage}/${env:NAME}/vpc/id}
+    RdsInboundRule:
+      Type: AWS::EC2::SecurityGroupIngress
+      Properties:
+        IpProtocol: tcp
+        FromPort: 3306
+        ToPort: 3306
+        SourceSecurityGroupId:          
+          Ref: LambdaSecurityGroup
+        GroupId: ${ssm:/${self:custom.stage}/${env:NAME}/database/security_group_id}

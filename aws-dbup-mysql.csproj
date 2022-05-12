@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AssemblyName>AwsDbUpMySql</AssemblyName>
+    <PackageId>aws-dbup-mysql</PackageId>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Amazon.Lambda.Core" Version="2.1.0" />
+    <PackageReference Include="Amazon.Lambda.Serialization.SystemTextJson" Version="2.2.0" />
+    <PackageReference Include="AWSSDK.SecretsManager.Caching" Version="1.0.4" />
+    <PackageReference Include="dbup-mysql" Version="4.5.0" />
+    <PackageReference Include="MySqlConnector" Version="2.1.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Amazon.Lambda.Core" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="scripts\*.sql" />
+  </ItemGroup>
+
+</Project>
