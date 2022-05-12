@@ -1,6 +1,6 @@
 # AWS DbUp MySql
 
-This repo contains the code for the Medium article [Read Secrets Manager secrets and perform RDS database migrations using Lambda](https://medium.com/@oliver.schenk/achieving-rds-password-rotation-with-secrets-manager-3444fa30c94b).
+This repo contains the code for the Medium article [Read Secrets Manager secrets and perform RDS database migrations using Lambda](https://medium.com/@oliver.schenk/read-secrets-manager-secrets-and-perform-rds-database-migrations-using-lambda-7bbea31938b4).
 
 It follows on from the article [Achieving RDS password rotation with Secrets Manager](https://medium.com/@oliver.schenk/achieving-rds-password-rotation-with-secrets-manager-3444fa30c94b).
 
