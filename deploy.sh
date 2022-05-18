@@ -10,6 +10,8 @@ DEFAULT_RELEASE_TYPE='Debug'
 DEFAULT_REGION='ap-southeast-2'
 DEFAULT_STAGE='dev'
 
+AWS_VAULT_PREFIX=''
+
 REGION=$DEFAULT_REGION
 STAGE=$DEFAULT_STAGE
 RELEASE_TYPE=$DEFAULT_RELEASE_TYPE
@@ -20,13 +22,17 @@ function usage {
     echo "  Script for deploying serverless lambda."
     echo ""
     echo "USAGE:"
-    echo "  deploy.sh -p credentials_profile [-r region] [-s stage] [-d destroy]"
+    echo "  deploy.sh [-p credentials_profile] [-r region] [-s stage] [-d destroy]"
     echo ""
     echo "OPTIONS"
     echo "  -p   the credentials profile to use (uses aws-vault)"
     echo "  -r   region (default: ap-southeast-2)"
     echo "  -s   the stage to deploy [dev, test, prod] (default: dev)"
     echo "  -d   destroy"
+}
+
+function aws_exec {
+    ${AWS_VAULT_PREFIX}$1
 }
 
 while getopts "p:r:s:d" option; do
@@ -43,13 +49,13 @@ while getopts "p:r:s:d" option; do
     esac
 done
 
-if [[ -z "${AWS_VAULT_PROFILE}" ]]; then
-    echo "Please provide the aws-vault profile as -p profile" 1>&2
-    VALIDATION_ERROR=1
-fi
 if [[ -n "${VALIDATION_ERROR}" ]]; then
     usage
     exit 1
+fi
+
+if [[ -n "${AWS_VAULT_PROFILE}" ]]; then
+    AWS_VAULT_PREFIX="aws-vault exec ${AWS_VAULT_PROFILE} -- "
 fi
 
 case ${STAGE,,} in
@@ -71,7 +77,6 @@ echo "=== Using the following parameters ==="
 echo "Region: ${REGION}"
 echo "Stage: ${STAGE}"
 echo "Release: ${RELEASE_TYPE}"
-echo "Profile: ${AWS_VAULT_PROFILE}"
 echo "Action: ${ACTION}"
 
 if [[ "${ACTION}" = "${DEPLOY_ACTION}" ]]; then
@@ -92,13 +97,13 @@ fi
 
 echo ""
 echo "=== Applying action: ${ACTION} ==="
-aws-vault exec ${AWS_VAULT_PROFILE} -- serverless ${ACTION} --region ${REGION} --stage ${STAGE}
+aws_exec "serverless ${ACTION} --region ${REGION} --stage ${STAGE}"
 
 if [[ "${ACTION}" = "${DEPLOY_ACTION}" ]]; then
 
   echo ""
   echo "=== Seeding database ==="
-  aws-vault exec ${AWS_VAULT_PROFILE} -- aws lambda invoke --function-name ${STAGE}-${NAME}-aws-dbup-mysql response.json
+  aws_exec "aws lambda invoke --function-name ${STAGE}-${NAME}-aws-dbup-mysql response.json"
   rm response.json
 
 fi
